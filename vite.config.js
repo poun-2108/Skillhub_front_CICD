@@ -1,4 +1,4 @@
-// PATH: vite.config.js (racine du projet)
+// PATH: vite.config.js (racine du projet) modifier
 
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
