@@ -1,5 +1,5 @@
 # PATH: .github/workflows/ci-cd.yml
-# Fix : npm install au lieu de npm ci (pas de package-lock.json dans le repo)
+# Fix : npm install --legacy-peer-deps (pas de lock file, pas de conflits peer)
 # SonarCloud : poun-2108 / poun-2108_skillhub_CICD_front
 
 name: CI/CD Frontend SkillHub
@@ -16,7 +16,7 @@ env:
 
 jobs:
 
-  # ── JOB 1 : Tests unitaires + couverture ───────────────────
+  # ── JOB 1 : Tests + couverture ─────────────────────────────
   test:
     name: Tests et couverture
     runs-on: ubuntu-latest
@@ -27,15 +27,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Pas de cache: npm car package-lock.json absent du repo
       - name: Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      # npm install (tolerant si pas de lock file)
+      # --legacy-peer-deps : resout les conflits de peer dependencies
       - name: Installer les dependances
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Tests et couverture
         run: npm run test:coverage
@@ -68,22 +67,20 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Installer les dependances
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Regenerer le rapport lcov pour SonarCloud
         run: npm run test:coverage
         env:
           CI: true
 
-      # GITHUB_TOKEN : automatique (pas besoin de secret)
-      # SONAR_TOKEN  : Settings > Secrets > Actions > SONAR_TOKEN
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN:  ${{ secrets.SONAR_TOKEN }}
 
-  # ── JOB 3 : Docker (uniquement push sur main/master) ────────
+  # ── JOB 3 : Docker (push main/master uniquement) ────────────
   docker:
     name: Docker Build et Push
     runs-on: ubuntu-latest
