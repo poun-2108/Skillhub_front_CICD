@@ -1,0 +1,27 @@
+# ── Dépendances (réinstallées dans le conteneur) ─────────────
+node_modules/
+
+# ── Fichiers de build locaux ──────────────────────────────────
+dist/
+dist-ssr/
+
+# ── Tests et couverture (pas en production) ───────────────────
+coverage/
+src/__tests__/
+
+# ── Variables d'environnement locales ─────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Git ───────────────────────────────────────────────────────
+.git/
+.gitignore
+
+# ── IDE ───────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.DS_Store
+
+# ── CI/CD ─────────────────────────────────────────────────────
+.github/
