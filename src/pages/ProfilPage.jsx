@@ -41,7 +41,6 @@ export default function ProfilPage() {
                 setUtilisateur(authService.getUtilisateur());
             }
         } catch (error) {
-            // Erreur loggee et affichee (fix SonarQube handle exception)
             console.error('Erreur upload photo:', error);
             setErreur("Erreur lors de l'upload. Verifiez le format (jpg, png) et la taille (max 2MB).");
         } finally {
@@ -72,7 +71,6 @@ export default function ProfilPage() {
                             {photoActuelle ? (
                                 <img
                                     src={photoActuelle}
-                                    {/* alt sans "photo" ni "image" (fix SonarQube redundant alt) */}
                                     alt={utilisateur?.nom || 'Avatar'}
                                     className="profil-avatar-img"
                                 />
@@ -102,7 +100,12 @@ export default function ProfilPage() {
                         <p className="profil-photo-hint">JPG, PNG ou GIF — max 2 MB</p>
 
                         {fichier && (
-                            <Bouton variante="principal" taille="moyen" onClick={handleUpload} disabled={chargement}>
+                            <Bouton
+                                variante="principal"
+                                taille="moyen"
+                                onClick={handleUpload}
+                                disabled={chargement}
+                            >
                                 {chargement ? 'Upload...' : 'Sauvegarder la photo'}
                             </Bouton>
                         )}
