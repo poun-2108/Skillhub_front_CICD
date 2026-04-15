@@ -1,6 +1,4 @@
 # PATH: .github/workflows/ci-cd.yml
-# Fix : npm install --legacy-peer-deps (pas de lock file, pas de conflits peer)
-# SonarCloud : poun-2108 / poun-2108_skillhub_CICD_front
 
 name: CI/CD Frontend SkillHub
 
@@ -16,7 +14,7 @@ env:
 
 jobs:
 
-  # ── JOB 1 : Tests + couverture ─────────────────────────────
+  # JOB 1 : Tests + couverture
   test:
     name: Tests et couverture
     runs-on: ubuntu-latest
@@ -32,7 +30,6 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      # --legacy-peer-deps : resout les conflits de peer dependencies
       - name: Installer les dependances
         run: npm install --legacy-peer-deps
 
@@ -49,7 +46,7 @@ jobs:
           path: coverage/
           retention-days: 7
 
-  # ── JOB 2 : SonarCloud ─────────────────────────────────────
+  # JOB 2 : SonarCloud
   sonarcloud:
     name: SonarCloud
     runs-on: ubuntu-latest
@@ -80,7 +77,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN:  ${{ secrets.SONAR_TOKEN }}
 
-  # ── JOB 3 : Docker (push main/master uniquement) ────────────
+  # JOB 3 : Docker - push main/master uniquement
   docker:
     name: Docker Build et Push
     runs-on: ubuntu-latest

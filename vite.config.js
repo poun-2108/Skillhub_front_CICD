@@ -1,6 +1,4 @@
-// PATH: vite.config.js
-// Seuils ajustes a la couverture reelle du perimetre teste
-// Les pages et composants complexes sont exclus de include
+// PATH: vite.config.js (racine du projet)
 
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
@@ -18,7 +16,7 @@ export default defineConfig({
       reporter:         ['text', 'lcov', 'html'],
       reportsDirectory: './coverage',
 
-      // Uniquement les fichiers testes - exclut pages, modals, Navbar...
+      // Uniquement les fichiers couverts par les tests
       include: [
         'src/components/Bouton.jsx',
         'src/context/AuthContext.jsx',
@@ -27,9 +25,6 @@ export default defineConfig({
         'src/services/moduleService.js',
       ],
 
-      // Seuils realistes sur le perimetre inclus
-      // Apres ajout des tests modifierModule + supprimerModule :
-      // lines ~90%, functions ~85%, branches ~92%
       thresholds: {
         lines:      85,
         functions:  75,

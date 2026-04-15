@@ -1,21 +1,10 @@
-# ── Node ────────────────────────────────────────────────────
 node_modules/
-npm-debug.log*
-
-# ── Vite build ───────────────────────────────────────────────
 dist/
 dist-ssr/
-
-# ── Tests & couverture ───────────────────────────────────────
 coverage/
-.vitest-cache/
-
-# ── Variables d'environnement (NE JAMAIS COMMITER) ───────────
 .env
 .env.local
 .env.production
-
-# ── IDE ──────────────────────────────────────────────────────
 .vscode/
 .idea/
 *.DS_Store
