@@ -1,3 +1,4 @@
+// PATH: src/pages/DashboardApprenantPage.jsx
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -26,6 +27,8 @@ export default function DashboardApprenantPage() {
             const data = await inscriptionService.mesFormations();
             setInscriptions(data);
         } catch (error) {
+            // Erreur loggee et affichee (fix SonarQube handle exception)
+            console.error('Erreur chargement inscriptions:', error);
             setErreur('Erreur lors du chargement des formations.');
         } finally {
             setChargement(false);
@@ -42,10 +45,16 @@ export default function DashboardApprenantPage() {
         setUploadingPhoto(true);
         try {
             const data = await authService.uploadPhoto(fichier);
-            setUtilisateur(data.user);
+            if (data.user) {
+                setUtilisateur(data.user);
+            } else {
+                setUtilisateur(authService.getUtilisateur());
+            }
             setMessageOk('Photo mise a jour.');
             setTimeout(() => setMessageOk(''), 3000);
-        } catch {
+        } catch (error) {
+            // Erreur loggee (fix SonarQube handle exception)
+            console.error('Erreur upload photo:', error);
             setErreur("Erreur upload photo.");
         } finally {
             setUploadingPhoto(false);
@@ -53,30 +62,32 @@ export default function DashboardApprenantPage() {
     };
 
     const handleDesinscrire = async (formationId) => {
-        if (!window.confirm('Se desinscrire de cette formation ?')) return;
+        // globalThis.confirm au lieu de window.confirm (fix SonarQube portability)
+        if (!globalThis.confirm('Se desinscrire de cette formation ?')) return;
         try {
             await inscriptionService.seDesinscrire(formationId);
             setMessageOk('Desinscription reussie.');
             chargerInscriptions();
             setTimeout(() => setMessageOk(''), 3000);
-        } catch {
+        } catch (error) {
+            console.error('Erreur desinscription:', error);
             setErreur('Erreur lors de la desinscription.');
         }
     };
 
     const getNiveauLabel = (n) => ({ debutant: 'Debutant', intermediaire: 'Intermediaire', avance: 'Avance' }[n] || n);
 
-    // Filtres par progression
-    const inscriptionsFiltrees = filtreActif === 'tout'
-        ? inscriptions
-        : filtreActif === 'en_cours'
-            ? inscriptions.filter(i => i.progression > 0 && i.progression < 100)
-            : filtreActif === 'termine'
-                ? inscriptions.filter(i => i.progression === 100)
-                : inscriptions.filter(i => i.progression === 0);
+    // Nested ternary extrait en fonction (fix SonarQube)
+    const filtrerInscriptions = (liste, filtre) => {
+        if (filtre === 'tout')     return liste;
+        if (filtre === 'en_cours') return liste.filter(i => i.progression > 0 && i.progression < 100);
+        if (filtre === 'termine')  return liste.filter(i => i.progression === 100);
+        return liste.filter(i => i.progression === 0);
+    };
 
-    const totalTermines  = inscriptions.filter(i => i.progression === 100).length;
-    const totalEnCours   = inscriptions.filter(i => i.progression > 0 && i.progression < 100).length;
+    const inscriptionsFiltrees = filtrerInscriptions(inscriptions, filtreActif);
+    const totalTermines   = inscriptions.filter(i => i.progression === 100).length;
+    const totalEnCours    = inscriptions.filter(i => i.progression > 0 && i.progression < 100).length;
     const moyenneProgression = inscriptions.length > 0
         ? Math.round(inscriptions.reduce((s, i) => s + i.progression, 0) / inscriptions.length)
         : 0;
@@ -85,66 +96,52 @@ export default function DashboardApprenantPage() {
         <div className="da-page">
             <Navbar />
 
-            {/* Hero banner */}
             <div className="da-hero">
                 <div className="da-hero-contenu">
                     <span className="da-hero-label">ESPACE APPRENANT</span>
-                    <h1 className="da-hero-titre">Dashboard Apprenant</h1>
+                    <h1 className="da-hero-titre">Mon Dashboard</h1>
                     <p className="da-hero-sous">
-                        Bonjour <strong>{utilisateur?.nom}</strong> — suivez vos formations et votre progression
+                        Bienvenue <strong>{utilisateur?.nom}</strong> — suivez votre progression
                     </p>
-                    <div className="da-hero-tags">
-    <button className="da-hero-tag" onClick={() => document.querySelector('.da-grille')?.scrollIntoView({ behavior: 'smooth' })}>
-        Formations inscrites
-    </button>
-    <button className="da-hero-tag" onClick={() => document.querySelector('.da-stats')?.scrollIntoView({ behavior: 'smooth' })}>
-        Progression en temps reel
-    </button>
-    <button className="da-hero-tag" onClick={() => navigate('/formations')}>
-        Modules interactifs
-    </button>
-    <button className="da-hero-tag" onClick={() => document.querySelector('.da-stats')?.scrollIntoView({ behavior: 'smooth' })}>
-        Suivi personnalise
-    </button>
-</div>
                 </div>
 
-                {/* Avatar */}
-                <div className="da-hero-droite">
+                <div className="da-hero-photo-section">
                     <div className="da-avatar-wrapper">
                         {utilisateur?.photo_profil ? (
                             <img
-                                src={`http://localhost:8000${utilisateur.photo_profil}`}
-                                alt="profil"
+                                src={`http://localhost:8001${utilisateur.photo_profil}`}
+                                alt="Profil"
                                 className="da-avatar-img"
                             />
                         ) : (
-                            <div className="da-avatar-initiales">
+                            <div className="da-avatar-placeholder">
                                 {utilisateur?.nom?.slice(0, 2).toUpperCase()}
                             </div>
                         )}
                         <button
-                            className="da-avatar-btn"
-                            onClick={() => inputPhotoRef.current.click()}
+                            type="button"
+                            className="da-avatar-edit"
+                            onClick={() => inputPhotoRef.current?.click()}
                             title="Changer la photo"
                             disabled={uploadingPhoto}
                         >
                             {uploadingPhoto ? '...' : '📷'}
                         </button>
-                        <input
-                            type="file"
-                            ref={inputPhotoRef}
-                            accept="image/jpeg,image/png,image/gif"
-                            onChange={handlePhotoChange}
-                            style={{ display: 'none' }}
-                        />
                     </div>
+                    <input
+                        ref={inputPhotoRef}
+                        type="file"
+                        accept="image/*"
+                        className="da-input-hidden"
+                        onChange={handlePhotoChange}
+                    />
                 </div>
             </div>
 
             <div className="da-contenu">
+                {messageOk && <p className="da-succes">{messageOk}</p>}
+                {erreur    && <p className="da-erreur">{erreur}</p>}
 
-                {/* Statistiques */}
                 <div className="da-stats">
                     <div className="da-stat-card">
                         <span className="da-stat-valeur">{inscriptions.length}</span>
@@ -158,59 +155,27 @@ export default function DashboardApprenantPage() {
                         <span className="da-stat-valeur">{totalEnCours}</span>
                         <span className="da-stat-label">En cours</span>
                     </div>
-                    <div className="da-stat-card da-stat-progression">
+                    <div className="da-stat-card">
                         <span className="da-stat-valeur">{moyenneProgression}%</span>
-                        <span className="da-stat-label">Progression moyenne</span>
-                        <div className="da-stat-barre">
-                            <div
-                                className="da-stat-barre-remplissage"
-                                style={{ width: `${moyenneProgression}%` }}
-                            />
-                        </div>
+                        <span className="da-stat-label">Progression moy.</span>
                     </div>
                 </div>
 
-                {/* Messages */}
-                {messageOk && <p className="da-succes">{messageOk}</p>}
-                {erreur    && <p className="da-erreur">{erreur}</p>}
-
-                {/* Filtres */}
                 <div className="da-filtres">
-                    {[
-                        { key: 'tout',     label: 'Toutes' },
-                        { key: 'en_cours', label: 'En cours' },
-                        { key: 'termine',  label: 'Terminees' },
-                        { key: 'debut',    label: 'Non commencees' },
-                    ].map((f) => (
+                    {['tout', 'en_cours', 'termine', 'non_commence'].map((f) => (
                         <button
-                            key={f.key}
-                            className={`da-filtre-btn ${filtreActif === f.key ? 'da-filtre-actif' : ''}`}
-                            onClick={() => setFiltreActif(f.key)}
+                            key={f}
+                            type="button"
+                            className={`da-filtre-btn ${filtreActif === f ? 'da-filtre-actif' : ''}`}
+                            onClick={() => setFiltreActif(f)}
                         >
-                            {f.label}
+                            {f === 'tout' ? 'Toutes' : f === 'en_cours' ? 'En cours' : f === 'termine' ? 'Terminees' : 'Non commencees'}
                         </button>
                     ))}
-                    <span className="da-filtres-compteur">
-                        {inscriptionsFiltrees.length} formation{inscriptionsFiltrees.length > 1 ? 's' : ''}
-                    </span>
-
-                    <div style={{ marginLeft: 'auto' }}>
-                        <Bouton
-                            variante="principal"
-                            taille="petit"
-                            onClick={() => navigate('/formations')}
-                        >
-                            + Decouvrir des formations
-                        </Bouton>
-                    </div>
                 </div>
 
-                {/* Grille */}
                 {chargement ? (
-                    <div className="da-chargement">
-                        <div className="da-spinner" />
-                        <p>Chargement de vos formations...</p>
-                    </div>
+                    <p className="da-chargement">Chargement...</p>
                 ) : inscriptionsFiltrees.length === 0 ? (
                     <div className="da-vide">
                         <p>Aucune formation dans cette categorie.</p>
@@ -220,78 +185,42 @@ export default function DashboardApprenantPage() {
                     </div>
                 ) : (
                     <div className="da-grille">
-                        {inscriptionsFiltrees.map((inscription) => (
-                            <div key={inscription.id} className="da-card">
-
-                                {/* Bandeau progression coloré */}
-                                <div
-                                    className="da-card-bandeau"
-                                    style={{
-                                        background: inscription.progression === 100
-                                            ? '#4ade80'
-                                            : inscription.progression > 0
-                                                ? '#f59e0b'
-                                                : '#475569'
-                                    }}
-                                />
-
+                        {inscriptionsFiltrees.map((insc) => (
+                            <div key={insc.id} className="da-card">
+                                <div className={`da-card-bandeau da-bandeau-${insc.formation?.niveau}`} />
                                 <div className="da-card-body">
                                     <div className="da-card-badges">
-                                        <span className="da-badge-niveau">
-                                            {getNiveauLabel(inscription.formation?.niveau)}
-                                        </span>
-                                        {inscription.progression === 100 && (
-                                            <span className="da-badge-termine">Termine</span>
-                                        )}
+                                        <span className="da-badge-niveau">{getNiveauLabel(insc.formation?.niveau)}</span>
                                     </div>
-
-                                    <h3 className="da-card-titre">
-                                        {inscription.formation?.titre}
-                                    </h3>
-
-                                    <p className="da-card-description">
-                                        {inscription.formation?.description?.slice(0, 90)}
-                                        {inscription.formation?.description?.length > 90 ? '...' : ''}
-                                    </p>
-
-                                    {/* Barre de progression */}
-                                    <div className="da-progression-bloc">
-                                        <div className="da-progression-header">
-                                            <span className="da-progression-label">Progression</span>
-                                            <span className="da-progression-valeur">{inscription.progression}%</span>
-                                        </div>
+                                    <h3 className="da-card-titre">{insc.formation?.titre}</h3>
+                                    <div className="da-progression">
                                         <div className="da-progression-barre">
-                                            <div
-                                                className="da-progression-remplissage"
-                                                style={{ width: `${inscription.progression}%` }}
-                                            />
+                                            <div className="da-progression-fill" style={{ width: `${insc.progression}%` }} />
                                         </div>
+                                        <span className="da-progression-pct">{insc.progression}%</span>
+                                    </div>
+                                    <div className="da-card-actions">
+                                        <Bouton
+                                            variante="principal"
+                                            taille="petit"
+                                            onClick={() => navigate(`/apprendre/${insc.formation_id}`)}
+                                        >
+                                            Continuer
+                                        </Bouton>
+                                        <Bouton
+                                            variante="danger"
+                                            taille="petit"
+                                            onClick={() => handleDesinscrire(insc.formation_id)}
+                                        >
+                                            Se desinscrire
+                                        </Bouton>
                                     </div>
                                 </div>
-
-                                <div className="da-card-actions">
-                                    <Bouton
-                                        variante="principal"
-                                        taille="petit"
-                                        onClick={() => navigate(`/apprendre/${inscription.formation_id}`)}
-                                    >
-                                        {inscription.progression > 0 ? 'Continuer' : 'Commencer'}
-                                    </Bouton>
-                                    <Bouton
-                                        variante="danger"
-                                        taille="petit"
-                                        onClick={() => handleDesinscrire(inscription.formation_id)}
-                                    >
-                                        Ne plus suivre
-                                    </Bouton>
-                                </div>
-
                             </div>
                         ))}
                     </div>
                 )}
             </div>
-
             <Footer />
         </div>
     );

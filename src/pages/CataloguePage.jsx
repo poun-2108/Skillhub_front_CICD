@@ -1,3 +1,4 @@
+// PATH: src/pages/CataloguePage.jsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -13,18 +14,24 @@ export default function CataloguePage() {
     const { estConnecte, estApprenant } = useAuth();
     const navigate = useNavigate();
 
-    const [formations,  setFormations]  = useState([]);
-    const [chargement,  setChargement]  = useState(true);
-    const [modalMode,   setModalMode]   = useState(null);
+    const [formations,   setFormations]   = useState([]);
+    const [chargement,   setChargement]   = useState(true);
+    const [modalMode,    setModalMode]    = useState(null);
     const [notification, setNotification] = useState(null);
-
-    const [recherche, setRecherche] = useState('');
-    const [categorie, setCategorie] = useState('');
-    const [niveau,    setNiveau]    = useState('');
+    const [recherche,    setRecherche]    = useState('');
+    const [categorie,    setCategorie]    = useState('');
+    const [niveau,       setNiveau]       = useState('');
 
     const afficherNotification = (message, type = 'succes') => {
         setNotification({ message, type });
         setTimeout(() => setNotification(null), 3500);
+    };
+
+    // Icone de notification extraite du nested ternary (fix SonarQube)
+    const getIconeNotification = (type) => {
+        if (type === 'succes') return '✓';
+        if (type === 'info')   return 'ℹ';
+        return '✕';
     };
 
     const chargerFormations = async () => {
@@ -51,10 +58,7 @@ export default function CataloguePage() {
     }, [recherche, categorie, niveau]);
 
     const handleInscription = async (formationId) => {
-        if (!estConnecte()) {
-            setModalMode('login');
-            return;
-        }
+        if (!estConnecte()) { setModalMode('login'); return; }
         try {
             await inscriptionService.sInscrire(formationId);
             afficherNotification('Inscription reussie ! Retrouvez cette formation dans votre dashboard.', 'succes');
@@ -74,15 +78,63 @@ export default function CataloguePage() {
         setNiveau('');
     };
 
+    // Contenu principal extrait du nested ternary JSX (fix SonarQube L127)
+    const renderContenu = () => {
+        if (chargement) return <p className="catalogue-chargement">Chargement...</p>;
+        if (formations.length === 0) return <p className="catalogue-vide">Aucune formation trouvee.</p>;
+        return (
+            <>
+                <p className="catalogue-compteur">
+                    {formations.length} formation{formations.length > 1 ? 's' : ''} trouvee{formations.length > 1 ? 's' : ''}
+                </p>
+                <div className="catalogue-grille">
+                    {formations.map((formation) => (
+                        <div key={formation.id} className="catalogue-card">
+                            <div className="catalogue-card-badges">
+                                <span className="catalogue-badge-niveau">{formation.niveau}</span>
+                                <span className="catalogue-badge-categorie">{formation.categorie?.replace('_', ' ')}</span>
+                            </div>
+                            <h3 className="catalogue-card-titre">{formation.titre}</h3>
+                            <p className="catalogue-card-description">
+                                {formation.description?.slice(0, 100)}
+                                {formation.description?.length > 100 ? '...' : ''}
+                            </p>
+                            <div className="catalogue-card-meta">
+                                <span>Par {formation.formateur?.nom}</span>
+                                <span>{formation.inscriptions_count} apprenant{formation.inscriptions_count > 1 ? 's' : ''}</span>
+                                <span>{formation.nombre_de_vues} vue{formation.nombre_de_vues > 1 ? 's' : ''}</span>
+                            </div>
+                            <div className="catalogue-card-actions">
+                                <Bouton variante="fantome" taille="petit" onClick={() => navigate(`/formation/${formation.id}`)}>
+                                    Voir detail
+                                </Bouton>
+                                {estApprenant() && (
+                                    <Bouton variante="principal" taille="petit" onClick={() => handleInscription(formation.id)}>
+                                        S&apos;inscrire
+                                    </Bouton>
+                                )}
+                                {!estConnecte() && (
+                                    <Bouton variante="principal" taille="petit" onClick={() => setModalMode('login')}>
+                                        Suivre la formation
+                                    </Bouton>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </>
+        );
+    };
+
     return (
         <div className="catalogue-page">
             <Navbar />
 
-            {/* Notification fixe en bas a droite */}
             {notification && (
                 <div className={`catalogue-notification catalogue-notification-${notification.type}`}>
+                    {/* Icone extraite du nested ternary (fix SonarQube L85) */}
                     <span className="catalogue-notif-icone">
-                        {notification.type === 'succes' ? '✓' : notification.type === 'info' ? 'ℹ' : '✕'}
+                        {getIconeNotification(notification.type)}
                     </span>
                     <span>{notification.message}</span>
                     <button className="catalogue-notif-fermer" onClick={() => setNotification(null)}>✕</button>
@@ -122,59 +174,12 @@ export default function CataloguePage() {
                     )}
                 </div>
 
-                {chargement ? (
-                    <p className="catalogue-chargement">Chargement...</p>
-                ) : formations.length === 0 ? (
-                    <p className="catalogue-vide">Aucune formation trouvee.</p>
-                ) : (
-                    <>
-                        <p className="catalogue-compteur">
-                            {formations.length} formation{formations.length > 1 ? 's' : ''} trouvee{formations.length > 1 ? 's' : ''}
-                        </p>
-                        <div className="catalogue-grille">
-                            {formations.map((formation) => (
-                                <div key={formation.id} className="catalogue-card">
-                                    <div className="catalogue-card-badges">
-                                        <span className="catalogue-badge-niveau">{formation.niveau}</span>
-                                        <span className="catalogue-badge-categorie">{formation.categorie?.replace('_', ' ')}</span>
-                                    </div>
-                                    <h3 className="catalogue-card-titre">{formation.titre}</h3>
-                                    <p className="catalogue-card-description">
-                                        {formation.description?.slice(0, 100)}
-                                        {formation.description?.length > 100 ? '...' : ''}
-                                    </p>
-                                    <div className="catalogue-card-meta">
-                                        <span>Par {formation.formateur?.nom}</span>
-                                        <span>{formation.inscriptions_count} apprenant{formation.inscriptions_count > 1 ? 's' : ''}</span>
-                                        <span>{formation.nombre_de_vues} vue{formation.nombre_de_vues > 1 ? 's' : ''}</span>
-                                    </div>
-                                    <div className="catalogue-card-actions">
-                                        <Bouton variante="fantome" taille="petit" onClick={() => navigate(`/formation/${formation.id}`)}>
-                                            Voir detail
-                                        </Bouton>
-                                        {estApprenant() && (
-                                            <Bouton variante="principal" taille="petit" onClick={() => handleInscription(formation.id)}>
-                                                S'inscrire
-                                            </Bouton>
-                                        )}
-                                        {!estConnecte() && (
-                                            <Bouton variante="principal" taille="petit" onClick={() => setModalMode('login')}>
-                                                Suivre la formation
-                                            </Bouton>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </>
-                )}
+                {renderContenu()}
             </div>
 
             <Footer />
 
-            {modalMode && (
-                <ModalAuth mode={modalMode} onFermer={() => setModalMode(null)} />
-            )}
+            {modalMode && <ModalAuth mode={modalMode} onFermer={() => setModalMode(null)} />}
         </div>
     );
 }

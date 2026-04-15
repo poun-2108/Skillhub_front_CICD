@@ -1,3 +1,4 @@
+// PATH: src/pages/DashboardFormateurPage.jsx
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -29,12 +30,10 @@ export default function DashboardFormateurPage() {
     const chargerFormations = async () => {
         setChargement(true);
         try {
-            const data = await formationService.getFormations();
-            const mes = data.filter(
-                (f) => parseInt(f.formateur_id) === parseInt(utilisateur?.id)
-            );
-            setFormations(mes);
+            const data = await formationService.getMesFormations();
+            setFormations(data);
         } catch (error) {
+            console.error('Erreur chargement formations:', error);
             setErreur('Erreur lors du chargement.');
         } finally {
             setChargement(false);
@@ -51,10 +50,16 @@ export default function DashboardFormateurPage() {
         setUploadingPhoto(true);
         try {
             const data = await authService.uploadPhoto(fichier);
-            setUtilisateur(data.user);
+            if (data.user) {
+                setUtilisateur(data.user);
+            } else {
+                setUtilisateur(authService.getUtilisateur());
+            }
             setMessageOk('Photo mise a jour.');
             setTimeout(() => setMessageOk(''), 3000);
-        } catch {
+        } catch (error) {
+            // Erreur loggee (fix SonarQube handle exception)
+            console.error('Erreur upload photo:', error);
             setErreur("Erreur upload photo.");
         } finally {
             setUploadingPhoto(false);
@@ -62,13 +67,15 @@ export default function DashboardFormateurPage() {
     };
 
     const handleSupprimer = async (id) => {
-        if (!window.confirm('Supprimer cette formation ?')) return;
+        // globalThis au lieu de window (fix SonarQube portability)
+        if (!globalThis.confirm('Supprimer cette formation ?')) return;
         try {
             await formationService.supprimerFormation(id);
             setMessageOk('Formation supprimee.');
             chargerFormations();
             setTimeout(() => setMessageOk(''), 3000);
-        } catch {
+        } catch (error) {
+            console.error('Erreur suppression:', error);
             setErreur('Erreur suppression.');
         }
     };
@@ -94,7 +101,6 @@ export default function DashboardFormateurPage() {
         <div className="df-page">
             <Navbar />
 
-            {/* Banniere hero */}
             <div className="df-hero">
                 <div className="df-hero-contenu">
                     <span className="df-hero-label">ESPACE FORMATEUR</span>
@@ -102,58 +108,58 @@ export default function DashboardFormateurPage() {
                     <p className="df-hero-sous">
                         Bienvenue <strong>{utilisateur?.nom}</strong> — gerez vos formations, modules et apprenants
                     </p>
-                   <div className="df-hero-tags">
-    <button className="df-hero-tag" onClick={() => { setFormationModif(null); setModalFormationOuverte(true); }}>
-        Creer des formations
-    </button>
-    <button className="df-hero-tag" onClick={() => document.querySelector('.df-grille')?.scrollIntoView({ behavior: 'smooth' })}>
-        Gerer les modules
-    </button>
-    <button className="df-hero-tag" onClick={() => document.querySelector('.df-stats')?.scrollIntoView({ behavior: 'smooth' })}>
-        Suivre les apprenants
-    </button>
-    <button className="df-hero-tag" onClick={() => document.querySelector('.df-stats')?.scrollIntoView({ behavior: 'smooth' })}>
-        Statistiques en direct
-    </button>
-</div>
+                    <div className="df-hero-tags">
+                        <button
+                            type="button"
+                            className="df-hero-tag"
+                            onClick={() => { setFormationModif(null); setModalFormationOuverte(true); }}
+                        >
+                            Creer des formations
+                        </button>
+                        <button
+                            type="button"
+                            className="df-hero-tag"
+                            onClick={() => document.querySelector('.df-grille')?.scrollIntoView({ behavior: 'smooth' })}
+                        >
+                            Voir mes formations
+                        </button>
+                    </div>
                 </div>
 
-                {/* Avatar dans le hero */}
-                <div className="df-hero-droite">
+                <div className="df-hero-photo-section">
                     <div className="df-avatar-wrapper">
                         {utilisateur?.photo_profil ? (
                             <img
-                                src={`http://localhost:8000${utilisateur.photo_profil}`}
-                                alt="profil"
+                                src={`http://localhost:8001${utilisateur.photo_profil}`}
+                                alt="Profil"
                                 className="df-avatar-img"
                             />
                         ) : (
-                            <div className="df-avatar-initiales">
+                            <div className="df-avatar-placeholder">
                                 {utilisateur?.nom?.slice(0, 2).toUpperCase()}
                             </div>
                         )}
                         <button
-                            className="df-avatar-btn"
-                            onClick={() => inputPhotoRef.current.click()}
+                            type="button"
+                            className="df-avatar-edit"
+                            onClick={() => inputPhotoRef.current?.click()}
                             title="Changer la photo"
                             disabled={uploadingPhoto}
                         >
                             {uploadingPhoto ? '...' : '📷'}
                         </button>
-                        <input
-                            type="file"
-                            ref={inputPhotoRef}
-                            accept="image/jpeg,image/png,image/gif"
-                            onChange={handlePhotoChange}
-                            style={{ display: 'none' }}
-                        />
                     </div>
+                    <input
+                        ref={inputPhotoRef}
+                        type="file"
+                        accept="image/*"
+                        className="df-input-hidden"
+                        onChange={handlePhotoChange}
+                    />
                 </div>
             </div>
 
             <div className="df-contenu">
-
-                {/* Statistiques */}
                 <div className="df-stats">
                     <div className="df-stat-card">
                         <span className="df-stat-valeur">{formations.length}</span>
@@ -167,21 +173,25 @@ export default function DashboardFormateurPage() {
                         <span className="df-stat-valeur">{totalVues}</span>
                         <span className="df-stat-label">Vues totales</span>
                     </div>
-                    <div className="df-stat-card df-stat-action" onClick={() => { setFormationModif(null); setModalFormationOuverte(true); }}>
+                    {/* button au lieu de div onClick (fix SonarQube non-native interactive) */}
+                    <button
+                        type="button"
+                        className="df-stat-card df-stat-action"
+                        onClick={() => { setFormationModif(null); setModalFormationOuverte(true); }}
+                    >
                         <span className="df-stat-plus">+</span>
                         <span className="df-stat-label">Nouvelle formation</span>
-                    </div>
+                    </button>
                 </div>
 
-                {/* Messages */}
                 {messageOk && <p className="df-succes">{messageOk}</p>}
                 {erreur    && <p className="df-erreur">{erreur}</p>}
 
-                {/* Filtres */}
                 <div className="df-filtres">
                     {['tout', 'debutant', 'intermediaire', 'avance'].map((f) => (
                         <button
                             key={f}
+                            type="button"
                             className={`df-filtre-btn ${filtreActif === f ? 'df-filtre-actif' : ''}`}
                             onClick={() => setFiltreActif(f)}
                         >
@@ -193,12 +203,8 @@ export default function DashboardFormateurPage() {
                     </span>
                 </div>
 
-                {/* Grille formations */}
                 {chargement ? (
-                    <div className="df-chargement">
-                        <div className="df-spinner" />
-                        <p>Chargement de vos formations...</p>
-                    </div>
+                    <div className="df-chargement"><div className="df-spinner" /><p>Chargement...</p></div>
                 ) : formationsFiltrees.length === 0 ? (
                     <div className="df-vide">
                         <p>Aucune formation dans cette categorie.</p>
@@ -210,53 +216,35 @@ export default function DashboardFormateurPage() {
                     <div className="df-grille">
                         {formationsFiltrees.map((formation) => (
                             <div key={formation.id} className="df-card">
-
-                                {/* Bandeau niveau coloré */}
                                 <div className={`df-card-bandeau df-bandeau-${formation.niveau}`} />
-
                                 <div className="df-card-body">
                                     <div className="df-card-badges">
                                         <span className="df-badge-niveau">{getNiveauLabel(formation.niveau)}</span>
                                         <span className="df-badge-categorie">{formation.categorie?.replace('_', ' ')}</span>
                                     </div>
-
                                     <h3 className="df-card-titre">{formation.titre}</h3>
-
-                                    <p className="df-card-description">
-                                        {formation.description?.slice(0, 90)}
-                                        {formation.description?.length > 90 ? '...' : ''}
-                                    </p>
-
-                                    <div className="df-card-stats">
-                                        <div className="df-stat-mini">
-                                            <span className="df-stat-mini-val">{formation.nombre_de_vues}</span>
-                                            <span className="df-stat-mini-label">vues</span>
-                                        </div>
-                                        <div className="df-stat-mini">
-                                            <span className="df-stat-mini-val">{formation.inscriptions_count}</span>
-                                            <span className="df-stat-mini-label">apprenants</span>
-                                        </div>
+                                    <p className="df-card-desc">{formation.description?.slice(0, 80)}...</p>
+                                    <div className="df-card-meta">
+                                        <span>👁 {formation.nombre_de_vues || 0}</span>
+                                        <span>👥 {formation.inscriptions_count || 0}</span>
+                                    </div>
+                                    <div className="df-card-actions">
+                                        <Bouton variante="secondaire" taille="petit" onClick={() => { setFormationModif(formation); setModalFormationOuverte(true); }}>
+                                            Modifier
+                                        </Bouton>
+                                        <Bouton variante="principal" taille="petit" onClick={() => { setFormationModules(formation); setModalModulesOuverte(true); }}>
+                                            Modules
+                                        </Bouton>
+                                        <Bouton variante="danger" taille="petit" onClick={() => handleSupprimer(formation.id)}>
+                                            Supprimer
+                                        </Bouton>
                                     </div>
                                 </div>
-
-                                <div className="df-card-actions">
-                                    <div className="df-card-actions-ligne">
-                                        <Bouton variante="fantome"    taille="petit" onClick={() => navigate(`/formation/${formation.id}`)}>Voir</Bouton>
-                                        <Bouton variante="secondaire" taille="petit" onClick={() => { setFormationModif(formation); setModalFormationOuverte(true); }}>Modifier</Bouton>
-                                        <Bouton variante="secondaire" taille="petit" onClick={() => { setFormationModules(formation); setModalModulesOuverte(true); }}>Modules</Bouton>
-                                    </div>
-                                    <div className="df-card-actions-supprimer">
-                                        <Bouton variante="danger" taille="petit" onClick={() => handleSupprimer(formation.id)}>Supprimer</Bouton>
-                                    </div>
-                                </div>
-
                             </div>
                         ))}
                     </div>
                 )}
             </div>
-
-            <Footer />
 
             {modalFormationOuverte && (
                 <ModalFormation
@@ -265,12 +253,14 @@ export default function DashboardFormateurPage() {
                     onSauvegarder={handleSauvegarder}
                 />
             )}
-            {modalModulesOuverte && (
+            {modalModulesOuverte && formationModules && (
                 <ModalModules
                     formation={formationModules}
                     onFermer={() => { setModalModulesOuverte(false); setFormationModules(null); }}
                 />
             )}
+
+            <Footer />
         </div>
     );
 }

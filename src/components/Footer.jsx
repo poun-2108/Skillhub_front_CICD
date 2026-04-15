@@ -1,3 +1,4 @@
+// PATH: src/components/Footer.jsx
 import { Link } from 'react-router-dom';
 import './Footer.css';
 
@@ -7,7 +8,6 @@ export default function Footer() {
     return (
         <footer className="footer">
 
-            {/* Bandeau supérieur */}
             <div className="footer-bandeau">
                 <div className="footer-brand">
                     <span className="footer-brand-nom">SKILLHUB</span>
@@ -17,13 +17,13 @@ export default function Footer() {
                 <div className="footer-newsletter">
                     <span className="footer-news-titre">NEWSLETTER</span>
                     <span className="footer-news-sub">Inscrivez-vous pour ne rien manquer</span>
-                    <button className="footer-news-btn">+ Je m'inscris</button>
+                    <button className="footer-news-btn">+ Je m&apos;inscris</button>
                 </div>
 
+                {/* href valide : ancre top de page */}
                 <a href="#top" className="footer-top">⤴</a>
             </div>
 
-            {/* Contenu principal */}
             <div className="footer-principal">
                 <div className="footer-col">
                     <h4 className="footer-col-titre">Adresse</h4>
@@ -45,17 +45,18 @@ export default function Footer() {
 
                 <div className="footer-col">
                     <h4 className="footer-col-titre">Informations</h4>
-                    <a href="#" className="footer-lien">Mentions légales</a>
-                    <a href="#" className="footer-lien">Conditions générales</a>
-                    <a href="#" className="footer-lien">Protection des données</a>
-                    <a href="#" className="footer-lien">Gestion des cookies</a>
+                    {/* Liens remplacés par des boutons accessibles (href="#" invalide) */}
+                    <button type="button" className="footer-lien footer-lien-btn">Mentions légales</button>
+                    <button type="button" className="footer-lien footer-lien-btn">Conditions générales</button>
+                    <button type="button" className="footer-lien footer-lien-btn">Protection des données</button>
+                    <button type="button" className="footer-lien footer-lien-btn">Gestion des cookies</button>
                 </div>
 
                 <div className="footer-col footer-col-droite">
                     <div className="footer-social">
-                        <a href="#" className="footer-social-btn" aria-label="Facebook">f</a>
-                        <a href="#" className="footer-social-btn" aria-label="Instagram">◎</a>
-                        <a href="#" className="footer-social-btn" aria-label="YouTube">▶</a>
+                        <button type="button" className="footer-social-btn" aria-label="Facebook">f</button>
+                        <button type="button" className="footer-social-btn" aria-label="Instagram">◎</button>
+                        <button type="button" className="footer-social-btn" aria-label="YouTube">▶</button>
                     </div>
                     <p className="footer-credit">
                         WEBSITE BY<br />
@@ -64,13 +65,12 @@ export default function Footer() {
                 </div>
             </div>
 
-            {/* Bas de page */}
             <div className="footer-bas">
                 <p>© {annee} Skillhub | All Rights Reserved</p>
                 <div className="footer-bas-liens">
-                    <a href="#">Privacy Policy</a>
+                    <button type="button" className="footer-lien footer-lien-btn">Privacy Policy</button>
                     <span>•</span>
-                    <a href="#">Terms & Conditions</a>
+                    <button type="button" className="footer-lien footer-lien-btn">Terms &amp; Conditions</button>
                 </div>
             </div>
 

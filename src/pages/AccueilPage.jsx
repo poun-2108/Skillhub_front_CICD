@@ -1,3 +1,4 @@
+// PATH: src/pages/AccueilPage.jsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -7,13 +8,40 @@ import Footer from '../components/Footer';
 import ModalAuth from '../components/ModalAuth';
 import './AccueilPage.css';
 
+// Donnees statiques definies en dehors du composant (evite recreations)
+const CCM_CARDS = [
+    { titre: 'Build up yourself', desc: 'Developpe tes competences avec des cours guides et projets.', chip: 'Explorer',   photo: '/images/ccm/build.jpg' },
+    { titre: 'Enroll',            desc: "Inscris-toi rapidement et commence des aujourd hui.",          chip: "S inscrire", photo: '/images/ccm/enroll.jpg' },
+    { titre: 'Resources',         desc: 'Accede aux supports, quiz, PDF et suivi des progres.',          chip: 'Voir plus',  photo: '/images/ccm/ressource.jpg' },
+    { titre: 'Call',              desc: "Contacte-nous pour plus d information.",                       chip: 'Contacter',  photo: '/images/ccm/call.jpg' },
+];
+
+const VALEURS = [
+    { titre: 'Accessibilite',    desc: 'Des contenus clairs, progressifs et disponibles 24h/24.',               btn: 'Decouvrir',          img: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80' },
+    { titre: 'Excellence',       desc: 'Des programmes concus par des formateurs experimentes.',                btn: 'Voir les programmes', img: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=600&q=80' },
+    { titre: 'Accompagnement',   desc: "Une communaute d apprenants et de formateurs a votre ecoute.",         btn: 'Rejoindre',           img: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=600&q=80' },
+];
+
+const PARTENAIRES = [
+    { id: 1,  src: '/images/carroussel/univ1.jpg',  alt: 'Partenaire 1'  },
+    { id: 2,  src: '/images/carroussel/univ2.png',  alt: 'Partenaire 2'  },
+    { id: 3,  src: '/images/carroussel/univ3.jpg',  alt: 'Partenaire 3'  },
+    { id: 4,  src: '/images/carroussel/univ4.jpg',  alt: 'Partenaire 4'  },
+    { id: 5,  src: '/images/carroussel/univ5.jpg',  alt: 'Partenaire 5'  },
+    { id: 6,  src: '/images/carroussel/univ6.png',  alt: 'Partenaire 6'  },
+    { id: 7,  src: '/images/carroussel/univ7.jpg',  alt: 'Partenaire 7'  },
+    { id: 8,  src: '/images/carroussel/univ8.jpg',  alt: 'Partenaire 8'  },
+    { id: 9,  src: '/images/carroussel/univ9.png',  alt: 'Partenaire 9'  },
+    { id: 10, src: '/images/carroussel/univ10.jpg', alt: 'Partenaire 10' },
+];
+
 export default function AccueilPage() {
     const { estConnecte } = useAuth();
     const navigate = useNavigate();
 
-    const [formations,  setFormations]  = useState([]);
-    const [chargement,  setChargement]  = useState(true);
-    const [modalMode,   setModalMode]   = useState(null);
+    const [formations, setFormations] = useState([]);
+    const [chargement, setChargement] = useState(true);
+    const [modalMode,  setModalMode]  = useState(null);
 
     useEffect(() => {
         const charger = async () => {
@@ -30,42 +58,34 @@ export default function AccueilPage() {
     }, []);
 
     const temoignages = [
-        {
-            nom:    'Ikalo RAZAFIMAHARAVO',
-            role:   'Apprenante Front-End',
-            texte:  "Des cours clairs, un suivi réel et une plateforme très intuitive. J'ai trouvé mon premier job grâce à cette formation.",
-            avatar: 'IR',
-        },
-        {
-            nom:    'Ny Aiko RASOLOARIDIMBY',
-            role:   'Formateur Back-End',
-            texte:  'Une vraie vision pédagogique, des outils modernes et une communauté engagée.',
-            avatar: 'NR',
-        },
-        {
-            nom:    'Andry RAKOTOARISOA',
-            role:   'Apprenant Full Stack',
-            texte:  "La meilleure plateforme pour apprendre vite et bien. L'accompagnement est exceptionnel.",
-            avatar: 'AR',
-        },
+        { nom: 'Ikalo RAZAFIMAHARAVO', role: 'Apprenante Front-End',   texte: "Des cours clairs, un suivi reel et une plateforme tres intuitive. J ai trouve mon premier job grace a cette formation.", avatar: 'IR' },
+        { nom: 'Ny Aiko RASOLOARIDIMBY', role: 'Formateur Back-End',   texte: 'Une vraie vision pedagogique, des outils modernes et une communaute engagee.',                                              avatar: 'NR' },
+        { nom: 'Andry RAKOTOARISOA',    role: 'Apprenant Full Stack',   texte: "La meilleure plateforme pour apprendre vite et bien. L accompagnement est exceptionnel.",                                  avatar: 'AR' },
     ];
 
-   // Tableau des logos partenaires avec les vrais chemins d'images
-const partenaires = [
-  { id: 1,  src: '/images/carroussel/univ1.jpg',  alt: 'Partenaire 1'  },
-  { id: 2,  src: '/images/carroussel/univ2.png',  alt: 'Partenaire 2'  },
-  { id: 3,  src: '/images/carroussel/univ3.jpg',  alt: 'Partenaire 3'  },
-  { id: 4,  src: '/images/carroussel/univ4.jpg',  alt: 'Partenaire 4'  },
-  { id: 5,  src: '/images/carroussel/univ5.jpg',  alt: 'Partenaire 5'  },
-  { id: 6,  src: '/images/carroussel/univ6.png',  alt: 'Partenaire 6'  },
-  { id: 7,  src: '/images/carroussel/univ7.jpg',  alt: 'Partenaire 7'  },
-  { id: 8,  src: '/images/carroussel/univ8.jpg',  alt: 'Partenaire 8'  },
-  { id: 9,  src: '/images/carroussel/univ9.png',  alt: 'Partenaire 9'  },
-  { id: 10, src: '/images/carroussel/univ10.jpg', alt: 'Partenaire 10' },
-];
     const getNiveauLabel = (niveau) => {
-        const labels = { debutant: 'Débutant', intermediaire: 'Intermédiaire', avance: 'Avancé' };
+        const labels = { debutant: 'Debutant', intermediaire: 'Intermediaire', avance: 'Avance' };
         return labels[niveau] || niveau;
+    };
+
+    // Contenu formations extrait du nested ternary (fix SonarQube L182)
+    const renderFormations = () => {
+        if (chargement) return <p className="accueil-chargement">Chargement...</p>;
+        if (formations.length === 0) return <p className="accueil-vide">Aucune formation disponible pour le moment.</p>;
+        return (
+            <div className="accueil-formations-grille">
+                {formations.map((formation) => (
+                    <div key={formation.id} className="accueil-formation-card">
+                        <span className="accueil-badge-niveau">{getNiveauLabel(formation.niveau)}</span>
+                        <h3>{formation.titre}</h3>
+                        <p className="accueil-formation-formateur">Par {formation.formateur?.nom}</p>
+                        <button className="btn-principal" onClick={() => navigate(`/formation/${formation.id}`)}>
+                            Voir le detail
+                        </button>
+                    </div>
+                ))}
+            </div>
+        );
     };
 
     return (
@@ -80,23 +100,13 @@ const partenaires = [
                         <span className="mot-violet">lead tomorrow</span>
                     </h1>
                     <p className="accueil-hero-desc">
-                        SKILLHUB vous aide à lancer votre carrière. Formations pratiques,
-                        projets réels et accompagnement pour progresser vite.
+                        SKILLHUB vous aide a lancer votre carriere. Formations pratiques,
+                        projets reels et accompagnement pour progresser vite.
                     </p>
                     {!estConnecte() && (
                         <div className="accueil-hero-actions">
-                            <button
-                                className="btn-principal"
-                                onClick={() => setModalMode('register')}
-                            >
-                                S'inscrire
-                            </button>
-                            <button
-                                className="btn-secondaire"
-                                onClick={() => navigate('/formations')}
-                            >
-                                Formations
-                            </button>
+                            <button className="btn-principal" onClick={() => setModalMode('register')}>S&apos;inscrire</button>
+                            <button className="btn-secondaire" onClick={() => navigate('/formations')}>Formations</button>
                         </div>
                     )}
                 </div>
@@ -110,59 +120,35 @@ const partenaires = [
             </section>
 
             {/* COMMENT CA MARCHE */}
-           {/* COMMENT CA MARCHE */}
-<section className="accueil-fonctionnement">
-    <h2 className="titre-section">Comment ca marche ?</h2>
-    <div className="accueil-cards-grille">
-        {[
-            { titre: 'Build up yourself', desc: 'Developpe tes competences avec des cours guides et projets.', chip: 'Explorer',   photo: '/images/ccm/build.jpg' },
-            { titre: 'Enroll',            desc: "Inscris-toi rapidement et commence des aujourd'hui.",          chip: "S'inscrire", photo: '/images/ccm/enroll.jpg' },
-            { titre: 'Resources',         desc: 'Accede aux supports, quiz, PDF et suivi des progres.',          chip: 'Voir plus',  photo: '/images/ccm/ressource.jpg' },
-            { titre: 'Call',              desc: "Contacte-nous pour plus d'information.",                       chip: 'Contacter',  photo: '/images/ccm/call.jpg' },
-        ].map((item, i) => (
-            <div
-                key={i}
-                className="accueil-card-glass"
-                style={{ backgroundImage: `url(${item.photo})` }}
-            >
-                {/* Overlay sombre pour lisibilité */}
-                <div className="accueil-card-overlay" />
-                <div className="accueil-card-contenu">
-                    <h3>{item.titre}</h3>
-                    <p>{item.desc}</p>
-                    <span className="accueil-card-chip">{item.chip}</span>
+            <section className="accueil-fonctionnement">
+                <h2 className="titre-section">Comment ca marche ?</h2>
+                <div className="accueil-cards-grille">
+                    {/* key={item.titre} au lieu de key={i} (fix SonarQube array index key) */}
+                    {CCM_CARDS.map((item) => (
+                        <div
+                            key={item.titre}
+                            className="accueil-card-glass"
+                            style={{ backgroundImage: `url(${item.photo})` }}
+                        >
+                            <div className="accueil-card-overlay" />
+                            <div className="accueil-card-contenu">
+                                <h3>{item.titre}</h3>
+                                <p>{item.desc}</p>
+                                <span className="accueil-card-chip">{item.chip}</span>
+                            </div>
+                        </div>
+                    ))}
                 </div>
-            </div>
-        ))}
-    </div>
-</section>
+            </section>
 
             {/* NOS VALEURS */}
             <section className="accueil-valeurs">
                 <h2 className="titre-section">Nos valeurs</h2>
                 <p className="sous-titre-section">Ce qui rend SkillHub unique au quotidien.</p>
                 <div className="accueil-valeurs-grille">
-                    {[
-                        {
-                            titre: 'Accessibilité',
-                            desc:  'Des contenus clairs, progressifs et disponibles 24h/24.',
-                            btn:   'Découvrir',
-                            img:   'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80',
-                        },
-                        {
-                            titre: 'Excellence',
-                            desc:  'Des programmes conçus par des formateurs expérimentés.',
-                            btn:   'Voir les programmes',
-                            img:   'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=600&q=80',
-                        },
-                        {
-                            titre: 'Accompagnement',
-                            desc:  "Une communauté d'apprenants et de formateurs à votre écoute.",
-                            btn:   'Rejoindre',
-                            img:   'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=600&q=80',
-                        },
-                    ].map((val, i) => (
-                        <div key={i} className="accueil-valeur-card" style={{ '--bg': `url(${val.img})` }}>
+                    {/* key={val.titre} au lieu de key={i} (fix SonarQube) */}
+                    {VALEURS.map((val) => (
+                        <div key={val.titre} className="accueil-valeur-card" style={{ '--bg': `url(${val.img})` }}>
                             <div className="accueil-valeur-overlay" />
                             <div className="accueil-valeur-contenu">
                                 <h3>{val.titre}</h3>
@@ -177,73 +163,39 @@ const partenaires = [
             {/* FORMATIONS A LA UNE */}
             <section className="accueil-formations">
                 <h2 className="titre-section">Formations a la une</h2>
-                {chargement ? (
-                    <p className="accueil-chargement">Chargement...</p>
-                ) : formations.length === 0 ? (
-                    <p className="accueil-vide">Aucune formation disponible pour le moment.</p>
-                ) : (
-                    <div className="accueil-formations-grille">
-                        {formations.map((formation) => (
-                            <div key={formation.id} className="accueil-formation-card">
-                                <span className="accueil-badge-niveau">
-                                    {getNiveauLabel(formation.niveau)}
-                                </span>
-                                <h3>{formation.titre}</h3>
-                                <p className="accueil-formation-formateur">
-                                    Par {formation.formateur?.nom}
-                                </p>
-                                <button
-                                    className="btn-principal"
-                                    onClick={() => navigate(`/formation/${formation.id}`)}
-                                >
-                                    Voir le detail
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                )}
+                {renderFormations()}
                 <div className="accueil-voir-tout">
-                    <button
-                        className="btn-secondaire"
-                        onClick={() => navigate('/formations')}
-                    >
+                    <button className="btn-secondaire" onClick={() => navigate('/formations')}>
                         Voir toutes les formations
                     </button>
                 </div>
             </section>
 
             {/* PARTENAIRES */}
-            {/* ===== Section Partenaires ===== */}
-<section className="accueil-partenaires">
+            <section className="accueil-partenaires">
+                <h2 className="titre-section">Nos Partenaires officiels</h2>
+                <p className="accueil-partenaires-desc">
+                    Ils nous soutiennent dans notre mission educative depuis plusieurs annees.
+                </p>
+                <div className="carousel-wrapper">
+                    <div className="carousel-track">
+                        {/* key composite pour eviter les doublons lors du doublement (fix SonarQube) */}
+                        {[...PARTENAIRES, ...PARTENAIRES].map((p, i) => (
+                            <div key={`${p.id}-${i}`} className="carousel-card">
+                                <img src={p.src} alt={p.alt} className="carousel-logo" loading="lazy" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
 
-  <h2 className="titre-section">Nos Partenaires officiels</h2>
-  <p className="accueil-partenaires-desc">
-    Ils nous soutiennent dans notre mission éducative depuis plusieurs années.
-  </p>
-
-  <div className="carousel-wrapper">
-    <div className="carousel-track">
-      {/* On duplique le tableau pour l'effet boucle infinie */}
-      {[...partenaires, ...partenaires].map((p, i) => (
-        <div key={i} className="carousel-card">
-          <img
-            src={p.src}
-            alt={p.alt}
-            className="carousel-logo"
-            loading="lazy"
-          />
-        </div>
-      ))}
-    </div>
-  </div>
-
-</section>
             {/* TEMOIGNAGES */}
             <section className="accueil-temoignages">
                 <h2 className="titre-section">Ils nous font confiance</h2>
                 <div className="accueil-temoignages-grille">
-                    {temoignages.map((t, i) => (
-                        <div key={i} className="accueil-temoignage-card">
+                    {/* key={t.nom} au lieu de key={i} (fix SonarQube) */}
+                    {temoignages.map((t) => (
+                        <div key={t.nom} className="accueil-temoignage-card">
                             <div className="accueil-temoignage-header">
                                 <div className="accueil-avatar">{t.avatar}</div>
                                 <div>
@@ -251,7 +203,7 @@ const partenaires = [
                                     <span>{t.role}</span>
                                 </div>
                             </div>
-                            <p>"{t.texte}"</p>
+                            <p>&quot;{t.texte}&quot;</p>
                             <div className="accueil-etoiles">★★★★★</div>
                         </div>
                     ))}
@@ -261,10 +213,7 @@ const partenaires = [
             <Footer />
 
             {modalMode && (
-                <ModalAuth
-                    mode={modalMode}
-                    onFermer={() => setModalMode(null)}
-                />
+                <ModalAuth mode={modalMode} onFermer={() => setModalMode(null)} />
             )}
         </div>
     );

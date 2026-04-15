@@ -1,3 +1,4 @@
+// PATH: src/pages/ProfilPage.jsx
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -10,14 +11,13 @@ import './ProfilPage.css';
 export default function ProfilPage() {
     const { utilisateur, setUtilisateur } = useAuth();
     const navigate = useNavigate();
-
     const inputRef = useRef(null);
 
-    const [apercu,      setApercu]      = useState(null);
-    const [fichier,     setFichier]     = useState(null);
-    const [chargement,  setChargement]  = useState(false);
-    const [messageOk,   setMessageOk]   = useState('');
-    const [erreur,      setErreur]      = useState('');
+    const [apercu,     setApercu]     = useState(null);
+    const [fichier,    setFichier]    = useState(null);
+    const [chargement, setChargement] = useState(false);
+    const [messageOk,  setMessageOk]  = useState('');
+    const [erreur,     setErreur]     = useState('');
 
     const handleFichierChange = (e) => {
         const f = e.target.files[0];
@@ -31,14 +31,18 @@ export default function ProfilPage() {
         setChargement(true);
         setErreur('');
         setMessageOk('');
-
         try {
             const data = await authService.uploadPhoto(fichier);
             setMessageOk('Photo mise a jour avec succes.');
             setFichier(null);
-            // Mise a jour du contexte
-            setUtilisateur(data.user);
+            if (data.user) {
+                setUtilisateur(data.user);
+            } else {
+                setUtilisateur(authService.getUtilisateur());
+            }
         } catch (error) {
+            // Erreur loggee et affichee (fix SonarQube handle exception)
+            console.error('Erreur upload photo:', error);
             setErreur("Erreur lors de l'upload. Verifiez le format (jpg, png) et la taille (max 2MB).");
         } finally {
             setChargement(false);
@@ -46,13 +50,16 @@ export default function ProfilPage() {
     };
 
     const photoActuelle = apercu || utilisateur?.photo_profil
-        ? (apercu || `http://localhost:8000${utilisateur?.photo_profil}`)
+        ? (apercu || `http://localhost:8001${utilisateur?.photo_profil}`)
         : null;
+
+    const dashboardUrl = utilisateur?.role === 'formateur'
+        ? '/dashboard/formateur'
+        : '/dashboard/apprenant';
 
     return (
         <div className="profil-page">
             <Navbar />
-
             <div className="profil-contenu">
                 <h1 className="profil-titre">Mon profil</h1>
 
@@ -60,14 +67,13 @@ export default function ProfilPage() {
                 {erreur    && <p className="profil-erreur">{erreur}</p>}
 
                 <div className="profil-carte">
-
-                    {/* Photo de profil */}
                     <div className="profil-photo-section">
                         <div className="profil-avatar-wrapper">
                             {photoActuelle ? (
                                 <img
                                     src={photoActuelle}
-                                    alt="Photo de profil"
+                                    {/* alt sans "photo" ni "image" (fix SonarQube redundant alt) */}
+                                    alt={utilisateur?.nom || 'Avatar'}
                                     className="profil-avatar-img"
                                 />
                             ) : (
@@ -75,9 +81,8 @@ export default function ProfilPage() {
                                     {utilisateur?.nom?.slice(0, 2).toUpperCase()}
                                 </div>
                             )}
-
-                            {/* Bouton camera par dessus la photo */}
                             <button
+                                type="button"
                                 className="profil-avatar-btn"
                                 onClick={() => inputRef.current.click()}
                                 title="Changer la photo"
@@ -94,23 +99,15 @@ export default function ProfilPage() {
                             style={{ display: 'none' }}
                         />
 
-                        <p className="profil-photo-hint">
-                            JPG, PNG ou GIF — max 2 MB
-                        </p>
+                        <p className="profil-photo-hint">JPG, PNG ou GIF — max 2 MB</p>
 
                         {fichier && (
-                            <Bouton
-                                variante="principal"
-                                taille="moyen"
-                                onClick={handleUpload}
-                                disabled={chargement}
-                            >
+                            <Bouton variante="principal" taille="moyen" onClick={handleUpload} disabled={chargement}>
                                 {chargement ? 'Upload...' : 'Sauvegarder la photo'}
                             </Bouton>
                         )}
                     </div>
 
-                    {/* Infos utilisateur */}
                     <div className="profil-infos">
                         <div className="profil-info-ligne">
                             <span className="profil-info-label">Nom</span>
@@ -127,23 +124,14 @@ export default function ProfilPage() {
                             </span>
                         </div>
                     </div>
-
                 </div>
 
                 <div className="profil-retour">
-                    <Bouton
-                        variante="secondaire"
-                        onClick={() => navigate(
-                            utilisateur?.role === 'formateur'
-                                ? '/dashboard/formateur'
-                                : '/dashboard/apprenant'
-                        )}
-                    >
+                    <Bouton variante="secondaire" onClick={() => navigate(dashboardUrl)}>
                         Retour au dashboard
                     </Bouton>
                 </div>
             </div>
-
             <Footer />
         </div>
     );

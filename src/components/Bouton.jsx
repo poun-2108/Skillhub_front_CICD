@@ -1,13 +1,15 @@
+// PATH: src/components/Bouton.jsx
+import PropTypes from 'prop-types';
 import './Bouton.css';
 
 export default function Bouton({
-    variante = 'principal',
-    taille   = 'moyen',
-    onClick,
-    disabled = false,
-    type     = 'button',
-    children,
-}) {
+                                   variante = 'principal',
+                                   taille   = 'moyen',
+                                   onClick,
+                                   disabled = false,
+                                   type     = 'button',
+                                   children,
+                               }) {
     const classes = [
         'bouton',
         `bouton-${variante}`,
@@ -26,3 +28,12 @@ export default function Bouton({
         </button>
     );
 }
+
+Bouton.propTypes = {
+    variante: PropTypes.string,
+    taille:   PropTypes.string,
+    onClick:  PropTypes.func,
+    disabled: PropTypes.bool,
+    type:     PropTypes.string,
+    children: PropTypes.node.isRequired,
+};

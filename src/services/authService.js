@@ -1,72 +1,103 @@
+// PATH: src/services/authService.js
 import api from './axiosConfig';
+
+/**
+ * Normalise l utilisateur recu du backend.
+ */
+function normaliserUtilisateur(user) {
+    if (!user) return null;
+    return {
+        ...user,
+        nom:  user.nom  || user.name || '',
+        name: user.name || user.nom  || '',
+    };
+}
 
 const authService = {
 
-    register: async (nom, email, password, role) => {
-        const response = await api.post('/register', { nom, email, password, role });
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        return response.data;
+    async register(nom, email, password, passwordConfirmation, role) {
+        const payload = { nom, email, password, password_confirmation: passwordConfirmation, role };
+        const reponse = await api.post('/register', payload);
+
+        // optional chain au lieu de reponse.data && reponse.data.user (fix SonarQube)
+        const utilisateurNormalise = normaliserUtilisateur(reponse.data?.user);
+
+        if (reponse.data?.token) {
+            localStorage.setItem('token', reponse.data.token);
+        }
+        if (utilisateurNormalise) {
+            localStorage.setItem('user', JSON.stringify(utilisateurNormalise));
+        }
+        return { ...reponse.data, user: utilisateurNormalise };
     },
 
-    login: async (email, password) => {
-        const response = await api.post('/login', { email, password });
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        return response.data;
+    async login(email, password) {
+        const reponse = await api.post('/login', { email, password });
+
+        // optional chain (fix SonarQube)
+        const utilisateurNormalise = normaliserUtilisateur(reponse.data?.user);
+
+        if (reponse.data?.token) {
+            localStorage.setItem('token', reponse.data.token);
+        }
+        if (utilisateurNormalise) {
+            localStorage.setItem('user', JSON.stringify(utilisateurNormalise));
+        }
+        return { ...reponse.data, user: utilisateurNormalise };
     },
 
-    logout: async () => {
+    async profile() {
+        const reponse = await api.get('/profile');
+        const utilisateurNormalise = normaliserUtilisateur(reponse.data?.user);
+        if (utilisateurNormalise) {
+            localStorage.setItem('user', JSON.stringify(utilisateurNormalise));
+        }
+        return { ...reponse.data, user: utilisateurNormalise };
+    },
+
+    async logout() {
+        const reponse = await api.post('/logout', {});
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        return reponse.data;
+    },
+
+    async uploadPhoto(fichier) {
+        const formData = new FormData();
+        formData.append('photo', fichier);
+        const reponse = await api.post('/profil/photo', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        const utilisateurNormalise = normaliserUtilisateur(reponse.data?.user);
+        if (utilisateurNormalise) {
+            localStorage.setItem('user', JSON.stringify(utilisateurNormalise));
+        }
+        return { ...reponse.data, user: utilisateurNormalise };
+    },
+
+    getUtilisateur() {
+        const utilisateur = localStorage.getItem('utilisateur');
+        if (!utilisateur) return null;
         try {
-            await api.post('/logout');
+            return JSON.parse(utilisateur);
         } catch (error) {
-            console.error('Erreur logout :', error);
-        } finally {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+            console.error('Erreur parsing utilisateur:', error);
+            return null;
         }
     },
 
-    profil: async () => {
-        const response = await api.get('/profile');
-        return response.data;
+    getToken() {
+        return localStorage.getItem('token');
     },
 
-    getUtilisateur: () => {
-        const user = localStorage.getItem('user');
-        return user ? JSON.parse(user) : null;
+    estConnecte() {
+        return !!localStorage.getItem('token');
     },
 
-    estConnecte: () => {
-        return localStorage.getItem('token') !== null;
-    },
-
-    estFormateur: () => {
-        const user = authService.getUtilisateur();
-        return user && user.role === 'formateur';
-    },
-
-    estApprenant: () => {
-        const user = authService.getUtilisateur();
-        return user && user.role === 'apprenant';
-    },
-    uploadPhoto: async (fichier) => {
-    const formData = new FormData();
-    formData.append('photo', fichier);
-
-    const response = await api.post('/profil/photo', formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-        },
-    });
-
-    // Mise à jour du localStorage avec la nouvelle photo
-    const userActuel = authService.getUtilisateur();
-    const userMisAJour = { ...userActuel, photo_profil: response.data.photo_profil };
-    localStorage.setItem('user', JSON.stringify(userMisAJour));
-
-    return response.data;
-},
+    clear() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+    }
 };
 
 export default authService;
