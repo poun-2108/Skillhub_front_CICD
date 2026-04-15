@@ -27,17 +27,14 @@ export default function DashboardApprenantPage() {
             const data = await inscriptionService.mesFormations();
             setInscriptions(data);
         } catch (error) {
-            // Erreur loggee et affichee (fix SonarQube handle exception)
-            console.error('Erreur chargement inscriptions:', error);
+            console.error('Erreur chargement:', error);
             setErreur('Erreur lors du chargement des formations.');
         } finally {
             setChargement(false);
         }
     };
 
-    useEffect(() => {
-        chargerInscriptions();
-    }, []);
+    useEffect(() => { chargerInscriptions(); }, []);
 
     const handlePhotoChange = async (e) => {
         const fichier = e.target.files[0];
@@ -45,24 +42,18 @@ export default function DashboardApprenantPage() {
         setUploadingPhoto(true);
         try {
             const data = await authService.uploadPhoto(fichier);
-            if (data.user) {
-                setUtilisateur(data.user);
-            } else {
-                setUtilisateur(authService.getUtilisateur());
-            }
+            if (data.user) { setUtilisateur(data.user); } else { setUtilisateur(authService.getUtilisateur()); }
             setMessageOk('Photo mise a jour.');
             setTimeout(() => setMessageOk(''), 3000);
         } catch (error) {
-            // Erreur loggee (fix SonarQube handle exception)
-            console.error('Erreur upload photo:', error);
-            setErreur("Erreur upload photo.");
+            console.error('Erreur upload:', error);
+            setErreur('Erreur upload photo.');
         } finally {
             setUploadingPhoto(false);
         }
     };
 
     const handleDesinscrire = async (formationId) => {
-        // globalThis.confirm au lieu de window.confirm (fix SonarQube portability)
         if (!globalThis.confirm('Se desinscrire de cette formation ?')) return;
         try {
             await inscriptionService.seDesinscrire(formationId);
@@ -77,7 +68,6 @@ export default function DashboardApprenantPage() {
 
     const getNiveauLabel = (n) => ({ debutant: 'Debutant', intermediaire: 'Intermediaire', avance: 'Avance' }[n] || n);
 
-    // Nested ternary extrait en fonction (fix SonarQube)
     const filtrerInscriptions = (liste, filtre) => {
         if (filtre === 'tout')     return liste;
         if (filtre === 'en_cours') return liste.filter(i => i.progression > 0 && i.progression < 100);
@@ -85,10 +75,18 @@ export default function DashboardApprenantPage() {
         return liste.filter(i => i.progression === 0);
     };
 
+    // Nested ternary L172/L179 extrait en fonction (fix SonarQube)
+    const getLabelFiltre = (f) => {
+        if (f === 'tout')          return 'Toutes';
+        if (f === 'en_cours')      return 'En cours';
+        if (f === 'termine')       return 'Terminees';
+        return 'Non commencees';
+    };
+
     const inscriptionsFiltrees = filtrerInscriptions(inscriptions, filtreActif);
-    const totalTermines   = inscriptions.filter(i => i.progression === 100).length;
-    const totalEnCours    = inscriptions.filter(i => i.progression > 0 && i.progression < 100).length;
-    const moyenneProgression = inscriptions.length > 0
+    const totalTermines        = inscriptions.filter(i => i.progression === 100).length;
+    const totalEnCours         = inscriptions.filter(i => i.progression > 0 && i.progression < 100).length;
+    const moyenneProgression   = inscriptions.length > 0
         ? Math.round(inscriptions.reduce((s, i) => s + i.progression, 0) / inscriptions.length)
         : 0;
 
@@ -108,33 +106,17 @@ export default function DashboardApprenantPage() {
                 <div className="da-hero-photo-section">
                     <div className="da-avatar-wrapper">
                         {utilisateur?.photo_profil ? (
-                            <img
-                                src={`http://localhost:8001${utilisateur.photo_profil}`}
-                                alt="Profil"
-                                className="da-avatar-img"
-                            />
+                            <img src={`http://localhost:8001${utilisateur.photo_profil}`} alt={utilisateur?.nom || 'Profil'} className="da-avatar-img" />
                         ) : (
-                            <div className="da-avatar-placeholder">
-                                {utilisateur?.nom?.slice(0, 2).toUpperCase()}
-                            </div>
+                            <div className="da-avatar-placeholder">{utilisateur?.nom?.slice(0, 2).toUpperCase()}</div>
                         )}
-                        <button
-                            type="button"
-                            className="da-avatar-edit"
-                            onClick={() => inputPhotoRef.current?.click()}
-                            title="Changer la photo"
-                            disabled={uploadingPhoto}
-                        >
+                        <button type="button" className="da-avatar-edit"
+                                onClick={() => inputPhotoRef.current?.click()}
+                                title="Changer la photo" disabled={uploadingPhoto}>
                             {uploadingPhoto ? '...' : '📷'}
                         </button>
                     </div>
-                    <input
-                        ref={inputPhotoRef}
-                        type="file"
-                        accept="image/*"
-                        className="da-input-hidden"
-                        onChange={handlePhotoChange}
-                    />
+                    <input ref={inputPhotoRef} type="file" accept="image/*" className="da-input-hidden" onChange={handlePhotoChange} />
                 </div>
             </div>
 
@@ -143,33 +125,18 @@ export default function DashboardApprenantPage() {
                 {erreur    && <p className="da-erreur">{erreur}</p>}
 
                 <div className="da-stats">
-                    <div className="da-stat-card">
-                        <span className="da-stat-valeur">{inscriptions.length}</span>
-                        <span className="da-stat-label">Formations</span>
-                    </div>
-                    <div className="da-stat-card">
-                        <span className="da-stat-valeur">{totalTermines}</span>
-                        <span className="da-stat-label">Terminees</span>
-                    </div>
-                    <div className="da-stat-card">
-                        <span className="da-stat-valeur">{totalEnCours}</span>
-                        <span className="da-stat-label">En cours</span>
-                    </div>
-                    <div className="da-stat-card">
-                        <span className="da-stat-valeur">{moyenneProgression}%</span>
-                        <span className="da-stat-label">Progression moy.</span>
-                    </div>
+                    <div className="da-stat-card"><span className="da-stat-valeur">{inscriptions.length}</span><span className="da-stat-label">Formations</span></div>
+                    <div className="da-stat-card"><span className="da-stat-valeur">{totalTermines}</span><span className="da-stat-label">Terminees</span></div>
+                    <div className="da-stat-card"><span className="da-stat-valeur">{totalEnCours}</span><span className="da-stat-label">En cours</span></div>
+                    <div className="da-stat-card"><span className="da-stat-valeur">{moyenneProgression}%</span><span className="da-stat-label">Progression moy.</span></div>
                 </div>
 
                 <div className="da-filtres">
                     {['tout', 'en_cours', 'termine', 'non_commence'].map((f) => (
-                        <button
-                            key={f}
-                            type="button"
-                            className={`da-filtre-btn ${filtreActif === f ? 'da-filtre-actif' : ''}`}
-                            onClick={() => setFiltreActif(f)}
-                        >
-                            {f === 'tout' ? 'Toutes' : f === 'en_cours' ? 'En cours' : f === 'termine' ? 'Terminees' : 'Non commencees'}
+                        <button key={f} type="button"
+                                className={`da-filtre-btn ${filtreActif === f ? 'da-filtre-actif' : ''}`}
+                                onClick={() => setFiltreActif(f)}>
+                            {getLabelFiltre(f)}
                         </button>
                     ))}
                 </div>
@@ -179,9 +146,7 @@ export default function DashboardApprenantPage() {
                 ) : inscriptionsFiltrees.length === 0 ? (
                     <div className="da-vide">
                         <p>Aucune formation dans cette categorie.</p>
-                        <Bouton variante="principal" onClick={() => navigate('/formations')}>
-                            Decouvrir les formations
-                        </Bouton>
+                        <Bouton variante="principal" onClick={() => navigate('/formations')}>Decouvrir les formations</Bouton>
                     </div>
                 ) : (
                     <div className="da-grille">
@@ -200,18 +165,12 @@ export default function DashboardApprenantPage() {
                                         <span className="da-progression-pct">{insc.progression}%</span>
                                     </div>
                                     <div className="da-card-actions">
-                                        <Bouton
-                                            variante="principal"
-                                            taille="petit"
-                                            onClick={() => navigate(`/apprendre/${insc.formation_id}`)}
-                                        >
+                                        <Bouton variante="principal" taille="petit"
+                                                onClick={() => navigate(`/apprendre/${insc.formation_id}`)}>
                                             Continuer
                                         </Bouton>
-                                        <Bouton
-                                            variante="danger"
-                                            taille="petit"
-                                            onClick={() => handleDesinscrire(insc.formation_id)}
-                                        >
+                                        <Bouton variante="danger" taille="petit"
+                                                onClick={() => handleDesinscrire(insc.formation_id)}>
                                             Se desinscrire
                                         </Bouton>
                                     </div>

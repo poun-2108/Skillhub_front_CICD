@@ -1,6 +1,5 @@
 // PATH: src/pages/DashboardFormateurPage.jsx
 import { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import formationService from '../services/formationService';
 import authService from '../services/authService';
@@ -13,7 +12,7 @@ import './DashboardFormateurPage.css';
 
 export default function DashboardFormateurPage() {
     const { utilisateur, setUtilisateur } = useAuth();
-    const navigate = useNavigate();
+    // navigate supprime car inutilise (fix SonarQube unused variable)
     const inputPhotoRef = useRef(null);
 
     const [formations,            setFormations]            = useState([]);
@@ -40,9 +39,7 @@ export default function DashboardFormateurPage() {
         }
     };
 
-    useEffect(() => {
-        chargerFormations();
-    }, []);
+    useEffect(() => { chargerFormations(); }, []);
 
     const handlePhotoChange = async (e) => {
         const fichier = e.target.files[0];
@@ -50,24 +47,18 @@ export default function DashboardFormateurPage() {
         setUploadingPhoto(true);
         try {
             const data = await authService.uploadPhoto(fichier);
-            if (data.user) {
-                setUtilisateur(data.user);
-            } else {
-                setUtilisateur(authService.getUtilisateur());
-            }
+            if (data.user) { setUtilisateur(data.user); } else { setUtilisateur(authService.getUtilisateur()); }
             setMessageOk('Photo mise a jour.');
             setTimeout(() => setMessageOk(''), 3000);
         } catch (error) {
-            // Erreur loggee (fix SonarQube handle exception)
-            console.error('Erreur upload photo:', error);
-            setErreur("Erreur upload photo.");
+            console.error('Erreur upload:', error);
+            setErreur('Erreur upload photo.');
         } finally {
             setUploadingPhoto(false);
         }
     };
 
     const handleSupprimer = async (id) => {
-        // globalThis au lieu de window (fix SonarQube portability)
         if (!globalThis.confirm('Supprimer cette formation ?')) return;
         try {
             await formationService.supprimerFormation(id);
@@ -89,13 +80,15 @@ export default function DashboardFormateurPage() {
     };
 
     const getNiveauLabel = (n) => ({ debutant: 'Debutant', intermediaire: 'Intermediaire', avance: 'Avance' }[n] || n);
-
-    const formationsFiltrees = filtreActif === 'tout'
-        ? formations
-        : formations.filter(f => f.niveau === filtreActif);
-
-    const totalVues      = formations.reduce((s, f) => s + (f.nombre_de_vues || 0), 0);
+    const formationsFiltrees = filtreActif === 'tout' ? formations : formations.filter(f => f.niveau === filtreActif);
+    const totalVues       = formations.reduce((s, f) => s + (f.nombre_de_vues || 0), 0);
     const totalApprenants = formations.reduce((s, f) => s + (f.inscriptions_count || 0), 0);
+
+    // Nested ternary extrait en fonction (fix SonarQube L208)
+    const getLabelFiltre = (f) => {
+        if (f === 'tout') return 'Toutes';
+        return getNiveauLabel(f);
+    };
 
     return (
         <div className="df-page">
@@ -106,21 +99,15 @@ export default function DashboardFormateurPage() {
                     <span className="df-hero-label">ESPACE FORMATEUR</span>
                     <h1 className="df-hero-titre">Dashboard Formateur</h1>
                     <p className="df-hero-sous">
-                        Bienvenue <strong>{utilisateur?.nom}</strong> — gerez vos formations, modules et apprenants
+                        Bienvenue <strong>{utilisateur?.nom}</strong> — gerez vos formations
                     </p>
                     <div className="df-hero-tags">
-                        <button
-                            type="button"
-                            className="df-hero-tag"
-                            onClick={() => { setFormationModif(null); setModalFormationOuverte(true); }}
-                        >
+                        <button type="button" className="df-hero-tag"
+                                onClick={() => { setFormationModif(null); setModalFormationOuverte(true); }}>
                             Creer des formations
                         </button>
-                        <button
-                            type="button"
-                            className="df-hero-tag"
-                            onClick={() => document.querySelector('.df-grille')?.scrollIntoView({ behavior: 'smooth' })}
-                        >
+                        <button type="button" className="df-hero-tag"
+                                onClick={() => document.querySelector('.df-grille')?.scrollIntoView({ behavior: 'smooth' })}>
                             Voir mes formations
                         </button>
                     </div>
@@ -129,33 +116,17 @@ export default function DashboardFormateurPage() {
                 <div className="df-hero-photo-section">
                     <div className="df-avatar-wrapper">
                         {utilisateur?.photo_profil ? (
-                            <img
-                                src={`http://localhost:8001${utilisateur.photo_profil}`}
-                                alt="Profil"
-                                className="df-avatar-img"
-                            />
+                            <img src={`http://localhost:8001${utilisateur.photo_profil}`} alt={utilisateur?.nom || 'Profil'} className="df-avatar-img" />
                         ) : (
-                            <div className="df-avatar-placeholder">
-                                {utilisateur?.nom?.slice(0, 2).toUpperCase()}
-                            </div>
+                            <div className="df-avatar-placeholder">{utilisateur?.nom?.slice(0, 2).toUpperCase()}</div>
                         )}
-                        <button
-                            type="button"
-                            className="df-avatar-edit"
-                            onClick={() => inputPhotoRef.current?.click()}
-                            title="Changer la photo"
-                            disabled={uploadingPhoto}
-                        >
+                        <button type="button" className="df-avatar-edit"
+                                onClick={() => inputPhotoRef.current?.click()}
+                                title="Changer la photo" disabled={uploadingPhoto}>
                             {uploadingPhoto ? '...' : '📷'}
                         </button>
                     </div>
-                    <input
-                        ref={inputPhotoRef}
-                        type="file"
-                        accept="image/*"
-                        className="df-input-hidden"
-                        onChange={handlePhotoChange}
-                    />
+                    <input ref={inputPhotoRef} type="file" accept="image/*" className="df-input-hidden" onChange={handlePhotoChange} />
                 </div>
             </div>
 
@@ -173,12 +144,8 @@ export default function DashboardFormateurPage() {
                         <span className="df-stat-valeur">{totalVues}</span>
                         <span className="df-stat-label">Vues totales</span>
                     </div>
-                    {/* button au lieu de div onClick (fix SonarQube non-native interactive) */}
-                    <button
-                        type="button"
-                        className="df-stat-card df-stat-action"
-                        onClick={() => { setFormationModif(null); setModalFormationOuverte(true); }}
-                    >
+                    <button type="button" className="df-stat-card df-stat-action"
+                            onClick={() => { setFormationModif(null); setModalFormationOuverte(true); }}>
                         <span className="df-stat-plus">+</span>
                         <span className="df-stat-label">Nouvelle formation</span>
                     </button>
@@ -189,13 +156,10 @@ export default function DashboardFormateurPage() {
 
                 <div className="df-filtres">
                     {['tout', 'debutant', 'intermediaire', 'avance'].map((f) => (
-                        <button
-                            key={f}
-                            type="button"
-                            className={`df-filtre-btn ${filtreActif === f ? 'df-filtre-actif' : ''}`}
-                            onClick={() => setFiltreActif(f)}
-                        >
-                            {f === 'tout' ? 'Toutes' : getNiveauLabel(f)}
+                        <button key={f} type="button"
+                                className={`df-filtre-btn ${filtreActif === f ? 'df-filtre-actif' : ''}`}
+                                onClick={() => setFiltreActif(f)}>
+                            {getLabelFiltre(f)}
                         </button>
                     ))}
                     <span className="df-filtres-compteur">
@@ -208,9 +172,7 @@ export default function DashboardFormateurPage() {
                 ) : formationsFiltrees.length === 0 ? (
                     <div className="df-vide">
                         <p>Aucune formation dans cette categorie.</p>
-                        <Bouton variante="principal" onClick={() => setModalFormationOuverte(true)}>
-                            Creer une formation
-                        </Bouton>
+                        <Bouton variante="principal" onClick={() => setModalFormationOuverte(true)}>Creer une formation</Bouton>
                     </div>
                 ) : (
                     <div className="df-grille">
@@ -229,10 +191,12 @@ export default function DashboardFormateurPage() {
                                         <span>👥 {formation.inscriptions_count || 0}</span>
                                     </div>
                                     <div className="df-card-actions">
-                                        <Bouton variante="secondaire" taille="petit" onClick={() => { setFormationModif(formation); setModalFormationOuverte(true); }}>
+                                        <Bouton variante="secondaire" taille="petit"
+                                                onClick={() => { setFormationModif(formation); setModalFormationOuverte(true); }}>
                                             Modifier
                                         </Bouton>
-                                        <Bouton variante="principal" taille="petit" onClick={() => { setFormationModules(formation); setModalModulesOuverte(true); }}>
+                                        <Bouton variante="principal" taille="petit"
+                                                onClick={() => { setFormationModules(formation); setModalModulesOuverte(true); }}>
                                             Modules
                                         </Bouton>
                                         <Bouton variante="danger" taille="petit" onClick={() => handleSupprimer(formation.id)}>
@@ -259,7 +223,6 @@ export default function DashboardFormateurPage() {
                     onFermer={() => { setModalModulesOuverte(false); setFormationModules(null); }}
                 />
             )}
-
             <Footer />
         </div>
     );

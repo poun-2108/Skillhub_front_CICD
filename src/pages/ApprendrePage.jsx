@@ -1,7 +1,6 @@
 // PATH: src/pages/ApprendrePage.jsx
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import formationService from '../services/formationService';
 import moduleService from '../services/moduleService';
 import inscriptionService from '../services/inscriptionService';
@@ -13,8 +12,7 @@ import './ApprendrePage.css';
 export default function ApprendrePage() {
     const { id }   = useParams();
     const navigate = useNavigate();
-    // Variable utilisateur supprimee car inutilisee (fix SonarQube unused)
-    const { } = useAuth();
+    // useAuth retire : utilisateur etait non utilise (fix SonarQube unused)
 
     const [formation,       setFormation]       = useState(null);
     const [modules,         setModules]         = useState([]);
@@ -40,7 +38,6 @@ export default function ApprendrePage() {
             setModulesTermines(termines.modules_termines ?? []);
 
             const insc = mesFormations.find(
-                // Number.parseInt au lieu de parseInt (fix SonarQube)
                 (i) => Number.parseInt(i.formation_id, 10) === Number.parseInt(id, 10)
             );
 
@@ -54,7 +51,6 @@ export default function ApprendrePage() {
                 setModuleActif(dataModules[0]);
             }
         } catch (error) {
-            // Erreur loggee et affichee (fix SonarQube handle exception)
             console.error('Erreur chargement formation:', error);
             setErreur('Erreur lors du chargement de la formation.');
         } finally {
@@ -62,9 +58,7 @@ export default function ApprendrePage() {
         }
     };
 
-    useEffect(() => {
-        charger();
-    }, [id]);
+    useEffect(() => { charger(); }, [id]);
 
     const handleTerminer = async (moduleId) => {
         setLoadingTerminer(true);
@@ -72,11 +66,11 @@ export default function ApprendrePage() {
         try {
             await moduleService.terminerModule(moduleId);
             setModulesTermines((prev) => [...prev, moduleId]);
-            setMessageOk('Module marqué comme terminé !');
+            setMessageOk('Module marque comme termine !');
             setTimeout(() => setMessageOk(''), 3000);
         } catch (error) {
             console.error('Erreur terminer module:', error);
-            setErreur('Erreur lors de la mise à jour du module.');
+            setErreur('Erreur lors de la mise a jour du module.');
         } finally {
             setLoadingTerminer(false);
         }
@@ -87,7 +81,6 @@ export default function ApprendrePage() {
         : 0;
 
     if (chargement) return <div className="apprendre-chargement">Chargement...</div>;
-
     if (!formation || !inscription) return null;
 
     return (
@@ -100,7 +93,7 @@ export default function ApprendrePage() {
                 <div className="apprendre-header">
                     <h1 className="apprendre-titre">{formation.titre}</h1>
                     <div className="apprendre-progression">
-                        <span>{progression}% complété</span>
+                        <span>{progression}% complete</span>
                         <div className="apprendre-barre">
                             <div className="apprendre-barre-fill" style={{ width: `${progression}%` }} />
                         </div>
@@ -132,17 +125,13 @@ export default function ApprendrePage() {
                                     <p>{moduleActif.contenu}</p>
                                 </div>
                                 {!modulesTermines.includes(moduleActif.id) && (
-                                    <Bouton
-                                        variante="principal"
-                                        onClick={() => handleTerminer(moduleActif.id)}
-                                        disabled={loadingTerminer}
-                                    >
-                                        {loadingTerminer ? 'Enregistrement...' : 'Marquer comme terminé'}
+                                    <Bouton variante="principal" onClick={() => handleTerminer(moduleActif.id)} disabled={loadingTerminer}>
+                                        {loadingTerminer ? 'Enregistrement...' : 'Marquer comme termine'}
                                     </Bouton>
                                 )}
                             </div>
                         ) : (
-                            <p className="apprendre-select">Sélectionnez un module dans la liste.</p>
+                            <p className="apprendre-select">Selectionnez un module dans la liste.</p>
                         )}
                     </main>
                 </div>

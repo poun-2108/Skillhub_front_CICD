@@ -23,7 +23,7 @@ export default function MessagerieModal({ onFermer }) {
 
     const apiGet = async (url) => {
         const token = getToken();
-        if (!token) throw new Error('Non authentifié');
+        if (!token) throw new Error('Non authentifie');
         const res  = await fetch(`${API}/${url}`, { headers: { Authorization: `Bearer ${token}` } });
         const data = await res.json();
         if (!res.ok) throw new Error(data?.message || `Erreur ${res.status}`);
@@ -32,11 +32,11 @@ export default function MessagerieModal({ onFermer }) {
 
     const apiPost = async (url, body) => {
         const token = getToken();
-        if (!token) throw new Error('Non authentifié');
+        if (!token) throw new Error('Non authentifie');
         const res  = await fetch(`${API}/${url}`, {
-            method:  'POST',
+            method: 'POST',
             headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body:    JSON.stringify(body),
+            body: JSON.stringify(body),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data?.message || `Erreur ${res.status}`);
@@ -47,8 +47,9 @@ export default function MessagerieModal({ onFermer }) {
         try {
             const data = await apiGet('messages/conversations');
             setConversations(data.conversations ?? []);
-        } catch {
-            // Erreur silencieuse : pas de perturbation UX pour le polling
+        } catch (error) {
+            // Erreur loggee : polling silencieux mais trace (fix SonarQube handle exception)
+            console.error('Erreur polling conversations:', error);
         }
     };
 
@@ -63,29 +64,21 @@ export default function MessagerieModal({ onFermer }) {
     };
 
     useEffect(() => {
-        const init = async () => {
-            await chargerConversations();
-            setChargementInit(false);
-        };
+        const init = async () => { await chargerConversations(); setChargementInit(false); };
         init();
         pollingRef.current = setInterval(chargerConversations, 5000);
         return () => clearInterval(pollingRef.current);
     }, []);
 
     const ouvrirConversation = async (conv) => {
-        setConvActive(conv);
-        setVueNouveau(false);
-        setErreur('');
+        setConvActive(conv); setVueNouveau(false); setErreur('');
         await chargerMessages(conv.interlocuteur_id);
         clearInterval(pollingRef.current);
         pollingRef.current = setInterval(() => chargerMessages(conv.interlocuteur_id), 3000);
     };
 
     const ouvrirNouveauMessage = async () => {
-        setVueNouveau(true);
-        setConvActive(null);
-        setMessages([]);
-        setErreur('');
+        setVueNouveau(true); setConvActive(null); setMessages([]); setErreur('');
         try {
             const data = await apiGet('messages/interlocuteurs');
             setInterlocuteurs(data.interlocuteurs ?? []);
@@ -96,31 +89,32 @@ export default function MessagerieModal({ onFermer }) {
 
     const envoyerMessage = async (destinataireId) => {
         if (!contenu.trim() || chargement) return;
-        setChargement(true);
-        setErreur('');
+        setChargement(true); setErreur('');
         try {
             await apiPost('messages/envoyer', { destinataire_id: destinataireId, contenu: contenu.trim() });
             setContenu('');
             await chargerMessages(destinataireId);
             chargerConversations();
         } catch (e) {
-            setErreur(e.message || "Erreur lors de l'envoi.");
-        } finally {
-            setChargement(false);
-        }
+            setErreur(e.message || "Erreur lors de l envoi.");
+        } finally { setChargement(false); }
     };
 
     const gererToucheEntree = (e, destinataireId) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            envoyerMessage(destinataireId);
-        }
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); envoyerMessage(destinataireId); }
     };
+
+    // Nested ternary L138 extrait (fix SonarQube)
+    const iconEnvoyer = chargement ? '...' : (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+    );
 
     return (
         <div className="msg-overlay" onClick={(e) => e.target === e.currentTarget && onFermer()}>
             <div className="msg-modal">
-
                 <div className="msg-sidebar">
                     <div className="msg-sidebar-header">
                         <h3>Messages</h3>
@@ -136,10 +130,10 @@ export default function MessagerieModal({ onFermer }) {
                         {chargementInit ? (
                             <p className="msg-vide">Chargement...</p>
                         ) : conversations.length === 0 ? (
-                            <p className="msg-vide">Aucune conversation — cliquez ✏️ pour commencer</p>
+                            <p className="msg-vide">Aucune conversation</p>
                         ) : (
                             conversations.map((conv) => (
-                                // button au lieu de div onClick (fix SonarQube non-native interactive)
+                                /* button au lieu de div onClick : fix SonarQube non-native interactive L121 */
                                 <button
                                     key={conv.interlocuteur_id}
                                     type="button"
@@ -160,7 +154,6 @@ export default function MessagerieModal({ onFermer }) {
 
                 <div className="msg-chat">
                     <button className="msg-fermer" onClick={onFermer}>✕</button>
-
                     {erreur && <div className="msg-erreur-bandeau">{erreur}</div>}
 
                     {vueNouveau && (
@@ -171,17 +164,8 @@ export default function MessagerieModal({ onFermer }) {
                                 <p className="msg-vide">Aucun utilisateur disponible.</p>
                             ) : (
                                 interlocuteurs.map((u) => (
-                                    // button au lieu de div onClick (fix SonarQube non-native interactive)
-                                    <button
-                                        key={u.id}
-                                        type="button"
-                                        className="msg-interlocuteur"
-                                        onClick={() => ouvrirConversation({
-                                            interlocuteur_id:  u.id,
-                                            interlocuteur_nom: u.nom,
-                                            non_lus:           0,
-                                        })}
-                                    >
+                                    <button key={u.id} type="button" className="msg-interlocuteur"
+                                            onClick={() => ouvrirConversation({ interlocuteur_id: u.id, interlocuteur_nom: u.nom, non_lus: 0 })}>
                                         <div className="msg-avatar">{u.nom?.slice(0, 2).toUpperCase()}</div>
                                         <div>
                                             <span className="msg-conv-nom">{u.nom}</span>
@@ -200,9 +184,7 @@ export default function MessagerieModal({ onFermer }) {
                                 <span>{convActive.interlocuteur_nom}</span>
                             </div>
                             <div className="msg-messages">
-                                {messages.length === 0 && (
-                                    <p className="msg-vide" style={{ textAlign: 'center', marginTop: '2rem' }}>Commencez la conversation !</p>
-                                )}
+                                {messages.length === 0 && <p className="msg-vide" style={{ textAlign: 'center', marginTop: '2rem' }}>Commencez la conversation !</p>}
                                 {messages.map((m) => {
                                     const moi = m.expediteur_id !== convActive.interlocuteur_id;
                                     return (
@@ -217,21 +199,14 @@ export default function MessagerieModal({ onFermer }) {
                                 <div ref={messagesFinRef} />
                             </div>
                             <div className="msg-saisie">
-                                <textarea
-                                    value={contenu}
-                                    onChange={(e) => setContenu(e.target.value)}
-                                    onKeyDown={(e) => gererToucheEntree(e, convActive.interlocuteur_id)}
-                                    placeholder="Écrivez un message... (Entrée pour envoyer)"
-                                    rows={2}
-                                    disabled={chargement}
-                                />
-                                <button onClick={() => envoyerMessage(convActive.interlocuteur_id)} disabled={chargement || !contenu.trim()} className="msg-btn-envoyer">
-                                    {chargement ? '...' : (
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <line x1="22" y1="2" x2="11" y2="13"/>
-                                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                                        </svg>
-                                    )}
+                                <textarea value={contenu}
+                                          onChange={(e) => setContenu(e.target.value)}
+                                          onKeyDown={(e) => gererToucheEntree(e, convActive.interlocuteur_id)}
+                                          placeholder="Ecrivez un message... (Entree pour envoyer)"
+                                          rows={2} disabled={chargement} />
+                                <button onClick={() => envoyerMessage(convActive.interlocuteur_id)}
+                                        disabled={chargement || !contenu.trim()} className="msg-btn-envoyer">
+                                    {iconEnvoyer}
                                 </button>
                             </div>
                         </>
@@ -242,7 +217,7 @@ export default function MessagerieModal({ onFermer }) {
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                             </svg>
-                            <p>Sélectionnez une conversation<br/>ou cliquez ✏️ pour en démarrer une</p>
+                            <p>Selectionnez une conversation ou cliquez pour en demarrer une</p>
                         </div>
                     )}
                 </div>
@@ -251,6 +226,4 @@ export default function MessagerieModal({ onFermer }) {
     );
 }
 
-MessagerieModal.propTypes = {
-    onFermer: PropTypes.func.isRequired,
-};
+MessagerieModal.propTypes = { onFermer: PropTypes.func.isRequired };
