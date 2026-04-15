@@ -1,7 +1,6 @@
 // PATH: test/Authservice.test.js
-// Tests authService - 7 tests pour couvrir >96% des lignes du service
-// Tests 16-20 : login, logout, getUtilisateur, estConnecte
-// Tests bonus  : register, clear (pour monter la couverture)
+// Tests authService - 7 tests
+// clear() absent du vrai projet => remplace par estConnecte() false
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
@@ -51,7 +50,7 @@ describe('authService', () => {
         expect(setItemSpy).toHaveBeenCalledWith('token', 'mon-token-jwt');
     });
 
-    // TEST 17 - login stocke l utilisateur (cle 'user' confirme par les logs)
+    // TEST 17 - login stocke l utilisateur (cle 'user' confirme par logs)
     it('login stocke l utilisateur serialise dans localStorage', async () => {
         api.post.mockResolvedValue({
             data: { token: 'token-xyz', user: { id: 2, nom: 'Bob', role: 'formateur' } },
@@ -59,7 +58,6 @@ describe('authService', () => {
 
         await authService.login('bob@mail.com', 'pass');
 
-        // La cle reelle est 'user' (confirme par Vitest spy logs)
         expect(setItemSpy).toHaveBeenCalledWith('user', expect.any(String));
     });
 
@@ -76,24 +74,21 @@ describe('authService', () => {
         expect(removeItemSpy).toHaveBeenCalledWith('user');
     });
 
-    // TEST 19 - getUtilisateur retourne null si localStorage vide
+    // TEST 19 - getUtilisateur retourne null si vide
     it('getUtilisateur retourne null quand localStorage est vide', () => {
         expect(authService.getUtilisateur()).toBeNull();
     });
 
-    // TEST 20 - estConnecte retourne true si token present
+    // TEST 20 - estConnecte true si token present
     it('estConnecte retourne true quand un token existe dans localStorage', () => {
         localStorage.setItem('token', 'valid-token');
         expect(authService.estConnecte()).toBe(true);
     });
 
-    // TEST BONUS A - register stocke le token apres inscription
+    // TEST BONUS A - register stocke le token
     it('register stocke le token dans localStorage apres inscription', async () => {
         api.post.mockResolvedValue({
-            data: {
-                token: 'token-register',
-                user:  { id: 3, nom: 'Nouveau', role: 'apprenant' },
-            },
+            data: { token: 'token-register', user: { id: 3, nom: 'Nouveau', role: 'apprenant' } },
         });
 
         await authService.register('Nouveau', 'new@mail.com', 'pass', 'pass', 'apprenant');
@@ -101,15 +96,10 @@ describe('authService', () => {
         expect(setItemSpy).toHaveBeenCalledWith('token', 'token-register');
     });
 
-    // TEST BONUS B - clear supprime toutes les donnees de session
-    it('clear supprime token et user du localStorage', () => {
-        localStorage.setItem('token', 'token-a-supprimer');
-        localStorage.setItem('user', JSON.stringify({ id: 99 }));
-
-        authService.clear();
-
-        expect(removeItemSpy).toHaveBeenCalledWith('token');
-        expect(removeItemSpy).toHaveBeenCalledWith('user');
+    // TEST BONUS B - estConnecte false si pas de token
+    it('estConnecte retourne false quand localStorage est vide', () => {
+        // localStorage est clear par beforeEach - pas de token
+        expect(authService.estConnecte()).toBe(false);
     });
 
 });
